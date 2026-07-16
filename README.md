@@ -33,8 +33,7 @@ You only need the first paragraph of instructions for each.
 ## 2. Download a local version of this repository
 
 - Go to https://github.com/KateJohnson/PHAR422_Decision_modeling_R_tutorial
-- Under the green 'code' button (top right), 'download ZIP' to download a local copy of the entire repository and its contexts
-![ ](Figures/download_zip.PNG)
+- Under the green 'code' button (top right), 'download ZIP' to download a local copy of the entire repository and its contents
 - Unzip and open the repository from your downloads folder
 
 *Note: you may want to move the R project folder out of your downloads folder to a more logical place, such as where you store 

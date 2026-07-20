@@ -252,15 +252,31 @@ knitr::kable(cycle_payoffs_T1 %>%
 summary(res_mod)
 
 # Putting the incremental results in a prettier dataframe
-icer <- summary(res_mod)$res_comp 
+icer <- summary(res_mod)$res_comp
 
-icer <- icer %>% 
-            mutate(ref = "T0") %>% 
+icer <- icer %>%
+            mutate(ref = "T0") %>%
             select(strategy = .strategy_names, ref, deltaCost = .dcost, deltaEffect = .deffect,
-                   icer = .icer) %>% 
+                   icer = .icer) %>%
             filter(strategy == "T1")
-    
+
 knitr::kable(icer)
+
+# Combining the strategy totals and the incremental result into one table, as in the Excel solution
+icer_table <- bind_rows(
+    cycle_payoffs_T1 %>%
+      summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
+      mutate(Comparator = "Treatment (T1)"),
+    cycle_payoffs_T0 %>%
+      summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
+      mutate(Comparator = "Conventional Management (T0)"),
+    tibble(Comparator = "Incremental", Costs = icer$deltaCost, QALYs = icer$deltaEffect,
+           `Cost per QALY` = icer$icer)
+  ) %>%
+  select(Comparator, Costs, QALYs, `Cost per QALY`) %>%
+  mutate(`Cost per QALY` = ifelse(is.na(`Cost per QALY`), "-", as.character(round(`Cost per QALY`))))
+
+knitr::kable(icer_table, digits = c(0, 0, 2, NA))
 ```
 
 **Question: What is the ICER for the new treatment (T1) versus conventional management (T0)?**

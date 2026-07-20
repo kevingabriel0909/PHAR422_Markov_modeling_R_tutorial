@@ -379,14 +379,14 @@ summary(res_mod)
 
 ``` r
 # Putting the incremental results in a prettier dataframe
-icer <- summary(res_mod)$res_comp 
+icer <- summary(res_mod)$res_comp
 
-icer <- icer %>% 
-            mutate(ref = "T0") %>% 
+icer <- icer %>%
+            mutate(ref = "T0") %>%
             select(strategy = .strategy_names, ref, deltaCost = .dcost, deltaEffect = .deffect,
-                   icer = .icer) %>% 
+                   icer = .icer) %>%
             filter(strategy == "T1")
-    
+
 knitr::kable(icer)
 ```
 
@@ -407,6 +407,55 @@ knitr::kable(icer)
 <td style="text-align: right;">10376.6</td>
 <td style="text-align: right;">0.7572887</td>
 <td style="text-align: right;">13702.31</td>
+</tr>
+</tbody>
+</table>
+
+``` r
+# Combining the strategy totals and the incremental result into one table, as in the Excel solution
+icer_table <- bind_rows(
+    cycle_payoffs_T1 %>%
+      summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
+      mutate(Comparator = "Treatment (T1)"),
+    cycle_payoffs_T0 %>%
+      summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
+      mutate(Comparator = "Conventional Management (T0)"),
+    tibble(Comparator = "Incremental", Costs = icer$deltaCost, QALYs = icer$deltaEffect,
+           `Cost per QALY` = icer$icer)
+  ) %>%
+  select(Comparator, Costs, QALYs, `Cost per QALY`) %>%
+  mutate(`Cost per QALY` = ifelse(is.na(`Cost per QALY`), "-", as.character(round(`Cost per QALY`))))
+
+knitr::kable(icer_table, digits = c(0, 0, 2, NA))
+```
+
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Comparator</th>
+<th style="text-align: right;">Costs</th>
+<th style="text-align: right;">QALYs</th>
+<th style="text-align: left;">Cost per QALY</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Treatment (T1)</td>
+<td style="text-align: right;">28888</td>
+<td style="text-align: right;">16.34</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Conventional Management (T0)</td>
+<td style="text-align: right;">18511</td>
+<td style="text-align: right;">15.58</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Incremental</td>
+<td style="text-align: right;">10377</td>
+<td style="text-align: right;">0.76</td>
+<td style="text-align: left;">13702</td>
 </tr>
 </tbody>
 </table>

@@ -53,7 +53,7 @@ First we’ll load some helpful packages.
 ``` r
 # Note the packages must first be installed with:
 # install.packages("tidyverse")
-# install.packages("heemod")
+# install.packages("heemod") # requires heemod >= 1.0.0
 
 library(tidyverse)
 ```
@@ -300,55 +300,7 @@ Now, let’s sum the model payoffs to get total costs and QALYs for each
 strategy.
 
 ``` r
-## Two different ways to get total costs and QALYS for each strategy
-# 1. Using our payoffs data: 
-knitr::kable(cycle_payoffs_T0 %>% 
-    summarise(total_cost = sum(cost), total_QALY = sum(utility)) %>% 
-      mutate(strategy = "T0"))
-```
-
-<table>
-<thead>
-<tr class="header">
-<th style="text-align: right;">total_cost</th>
-<th style="text-align: right;">total_QALY</th>
-<th style="text-align: left;">strategy</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">18511.28</td>
-<td style="text-align: right;">15.58162</td>
-<td style="text-align: left;">T0</td>
-</tr>
-</tbody>
-</table>
-
-``` r
-knitr::kable(cycle_payoffs_T1 %>% 
-    summarise(total_cost = sum(cost), total_QALY = sum(utility)) %>% 
-      mutate(strategy = "T1"))
-```
-
-<table>
-<thead>
-<tr class="header">
-<th style="text-align: right;">total_cost</th>
-<th style="text-align: right;">total_QALY</th>
-<th style="text-align: left;">strategy</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">28887.88</td>
-<td style="text-align: right;">16.33891</td>
-<td style="text-align: left;">T1</td>
-</tr>
-</tbody>
-</table>
-
-``` r
-# 2. Looking at the default outputs of the run_model function
+# Looking at the default outputs of the run_model function
 summary(res_mod)
 ```
 
@@ -379,39 +331,12 @@ summary(res_mod)
 
 ``` r
 # Putting the incremental results in a prettier dataframe
-icer <- summary(res_mod)$res_comp
-
-icer <- icer %>%
+icer_delta <- summary(res_mod)$res_comp %>%
             mutate(ref = "T0") %>%
             select(strategy = .strategy_names, ref, deltaCost = .dcost, deltaEffect = .deffect,
                    icer = .icer) %>%
             filter(strategy == "T1")
 
-knitr::kable(icer)
-```
-
-<table>
-<thead>
-<tr class="header">
-<th style="text-align: left;">strategy</th>
-<th style="text-align: left;">ref</th>
-<th style="text-align: right;">deltaCost</th>
-<th style="text-align: right;">deltaEffect</th>
-<th style="text-align: right;">icer</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">T1</td>
-<td style="text-align: left;">T0</td>
-<td style="text-align: right;">10376.6</td>
-<td style="text-align: right;">0.7572887</td>
-<td style="text-align: right;">13702.31</td>
-</tr>
-</tbody>
-</table>
-
-``` r
 # Combining the strategy totals and the incremental result into one table, as in the Excel solution
 icer_table <- bind_rows(
     cycle_payoffs_T1 %>%
@@ -420,8 +345,8 @@ icer_table <- bind_rows(
     cycle_payoffs_T0 %>%
       summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
       mutate(Comparator = "Conventional Management (T0)"),
-    tibble(Comparator = "Incremental", Costs = icer$deltaCost, QALYs = icer$deltaEffect,
-           `Cost per QALY` = icer$icer)
+    tibble(Comparator = "Incremental", Costs = icer_delta$deltaCost, QALYs = icer_delta$deltaEffect,
+           `Cost per QALY` = icer_delta$icer)
   ) %>%
   select(Comparator, Costs, QALYs, `Cost per QALY`) %>%
   mutate(`Cost per QALY` = ifelse(is.na(`Cost per QALY`), "-", as.character(round(`Cost per QALY`))))

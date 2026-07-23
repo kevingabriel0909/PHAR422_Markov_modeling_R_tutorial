@@ -32,8 +32,7 @@ patients have a health utility of 0.4.
 -   You may ignore discounting of costs and benefits associated with
     future events.
 -   You do not need to include a half-cycle correction.
--   Assume that patients who die do so at the start of the year, after
-    taking the treatment, and that there are no death costs.
+-   Assume that patients who die in a cycle incur neither the state costs or cost of treatment.
 
 3.1 Develop a Markov model to calculate the incremental
 cost-effectiveness of the new treatment (T1) versus conventional

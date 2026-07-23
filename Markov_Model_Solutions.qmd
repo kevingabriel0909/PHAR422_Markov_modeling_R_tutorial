@@ -1,6 +1,6 @@
 ---
 title: "Markov Model Excel Adaptation With Solution"
-format: html
+format: md
 editor: visual
 ---
 
@@ -25,6 +25,10 @@ The health utility associated with healthy patients is 0.9. Unhealthy patients h
 
 3.2 If the healthcare payer was willing to pay \$20,000 for 1 additional QALY, should they fund this new treatment?
 
+**Markov model schematic:**
+
+![](Figures/Markov_model_schematic.png)
+
 ## Modeling
 
 First we'll load some helpful packages.
@@ -32,13 +36,13 @@ First we'll load some helpful packages.
 ```{r}
 # Note the packages must first be installed with:
 # install.packages("tidyverse")
-# install.packages("heemod")
+# install.packages("heemod") # requires heemod >= 1.0.0
 
 library(tidyverse)
 library(heemod)
 ```
 
-## Defining parameters
+### Defining parameters
 
 **Question: Fill in the parameters below using the information in the model description.**
 
@@ -52,7 +56,7 @@ p_HD <- 8/1825 # probability of dying when Healthy
 p_UD <- 9/1095 # probability of dying when Unhealthy
 ```
 
-Now we put all the parameters we've defined into the form heemod wants them in:
+Now we put all the parameters we've defined into the form `heemod` wants them in:
 
 Note that the cost of the new treatment (`c_trt`) is defined separately from the state costs since only one treatment arm will be affected.
 
@@ -81,7 +85,7 @@ u_D = 0 # annual utility of being Dead
 )
 ```
 
-## Creating transition matrices
+### Creating transition matrices
 
 ```{r}
 states <- c("H", "U", "D")
@@ -106,7 +110,7 @@ plot(mat_T0) # visual checks
 plot(mat_T1) 
 ```
 
-## Defining states
+### Defining states
 
 The treatment cost `c_trt` is added to *both* the Healthy and Unhealthy state costs under T1, since patients start treatment while Healthy and must continue it even after becoming Unhealthy. Therefore, it is not added to the Death state, as there are no death costs in this exercise.
 
@@ -146,7 +150,7 @@ state_D_T1 <- define_state(
 )
 ```
 
-## Defining strategies
+### Defining strategies
 
 ```{r}
 ## Conventional management (T0)
@@ -172,7 +176,7 @@ The initial distribution between states in model cycle 0 also needs to be define
 time0 <- define_init(H = 1, U = 0, D = 0) # initial state vector
 ```
 
-## Run the model
+### Run the model
 
 ```{r}
 # run for 20 model cycles (years)
@@ -187,9 +191,7 @@ res_mod <- run_model(
     parameters = param,
     cost = cost,
     effect = utility,
-      method = "end" # no half-cycle correction; transitions occur at the end of each cycle
-                    # matching the "no half-cycle correction" instruction 
-    
+    method = "end" # no half-cycle correction; transitions occur at the end of each cycle
   )
 ```
 
@@ -236,29 +238,31 @@ cycle_payoffs_T1 <- cycle_payoffs %>%
 Now, let's sum the model payoffs to get total costs and QALYs for each strategy.
 
 ```{r}
-## Two different ways to get total costs and QALYS for each strategy
-# 1. Using our payoffs data: 
-knitr::kable(cycle_payoffs_T0 %>% 
-    summarise(total_cost = sum(cost), total_QALY = sum(utility)) %>% 
-      mutate(strategy = "T0"))
-
-knitr::kable(cycle_payoffs_T1 %>% 
-    summarise(total_cost = sum(cost), total_QALY = sum(utility)) %>% 
-      mutate(strategy = "T1"))
-
-# 2. Looking at the default outputs of the run_model function
+# Looking at the default outputs of the run_model function
 summary(res_mod)
 
 # Putting the incremental results in a prettier dataframe
-icer <- summary(res_mod)$res_comp 
-
-icer <- icer %>% 
-            mutate(ref = "T0") %>% 
+icer_delta <- summary(res_mod)$res_comp %>%
+            mutate(ref = "T0") %>%
             select(strategy = .strategy_names, ref, deltaCost = .dcost, deltaEffect = .deffect,
-                   icer = .icer) %>% 
+                   icer = .icer) %>%
             filter(strategy == "T1")
-    
-knitr::kable(icer)
+
+# Combining the strategy totals and the incremental result into one table, as in the Excel solution
+icer_table <- bind_rows(
+    cycle_payoffs_T1 %>%
+      summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
+      mutate(Comparator = "Treatment (T1)"),
+    cycle_payoffs_T0 %>%
+      summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
+      mutate(Comparator = "Conventional Management (T0)"),
+    tibble(Comparator = "Incremental", Costs = icer_delta$deltaCost, QALYs = icer_delta$deltaEffect,
+           `Cost per QALY` = icer_delta$icer)
+  ) %>%
+  select(Comparator, Costs, QALYs, `Cost per QALY`) %>%
+  mutate(`Cost per QALY` = ifelse(is.na(`Cost per QALY`), "-", as.character(round(`Cost per QALY`))))
+
+knitr::kable(icer_table, digits = c(0, 0, 2, NA))
 ```
 
 **Question: What is the ICER for the new treatment (T1) versus conventional management (T0)?**

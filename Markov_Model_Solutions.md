@@ -1,6 +1,5 @@
 # Markov Model Excel Adaptation With Solution
 
-
 ## Model Description
 
 Consider a latent disease whereby there are three possible health
@@ -18,8 +17,8 @@ patients in the control group, who received conventional management
 patients per year. Once patients become unhealthy, they cannot become
 healthy again, but all patients start off as healthy carriers.
 
-The cost of the new treatment is \$1,000 per year, and the cost of
-treating unhealthy patients is \$6,000 per year. There is no cost
+The cost of the new treatment is $1,000 per year, and the cost of
+treating unhealthy patients is $6,000 per year. There is no cost
 associated with healthy patients (aside from treatment, if received) or
 with death.
 
@@ -28,20 +27,24 @@ patients have a health utility of 0.4.
 
 **Additional information**
 
-- All patients either receive the new treatment (T1) or conventional
-  management (T0).
-- You may ignore discounting of costs and benefits associated with
-  future events.
-- You do not need to include a half-cycle correction.
-- Assume that patients who die do so at the start of the year, after
-  taking the treatment, and that there are no death costs.
+-   All patients either receive the new treatment (T1) or conventional
+    management (T0).
+-   You may ignore discounting of costs and benefits associated with
+    future events.
+-   You do not need to include a half-cycle correction.
+-   Assume that patients who die do so at the start of the year, after
+    taking the treatment, and that there are no death costs.
 
 3.1 Develop a Markov model to calculate the incremental
 cost-effectiveness of the new treatment (T1) versus conventional
 management (T0) over a time horizon of 20 years.
 
-3.2 If the healthcare payer was willing to pay \$20,000 for 1 additional
+3.2 If the healthcare payer was willing to pay $20,000 for 1 additional
 QALY, should they fund this new treatment?
+
+**Markov model schematic:**
+
+![](Figures/Markov_model_schematic.png)
 
 ## Modeling
 
@@ -50,17 +53,17 @@ First we’ll load some helpful packages.
 ``` r
 # Note the packages must first be installed with:
 # install.packages("tidyverse")
-# install.packages("heemod")
+# install.packages("heemod") # requires heemod >= 1.0.0
 
 library(tidyverse)
 ```
 
     ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-    ✔ dplyr     1.2.0     ✔ readr     2.2.0
-    ✔ forcats   1.0.1     ✔ stringr   1.6.0
-    ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
-    ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-    ✔ purrr     1.2.2     
+    ✔ dplyr     1.1.4     ✔ readr     2.1.5
+    ✔ forcats   1.0.0     ✔ stringr   1.5.1
+    ✔ ggplot2   4.0.1     ✔ tibble    3.3.0
+    ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+    ✔ purrr     1.2.0     
     ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
     ✖ dplyr::filter() masks stats::filter()
     ✖ dplyr::lag()    masks stats::lag()
@@ -77,7 +80,7 @@ library(heemod)
 
         modify
 
-## Defining parameters
+### Defining parameters
 
 **Question: Fill in the parameters below using the information in the
 model description.**
@@ -92,7 +95,7 @@ p_HD <- 8/1825 # probability of dying when Healthy
 p_UD <- 9/1095 # probability of dying when Unhealthy
 ```
 
-Now we put all the parameters we’ve defined into the form heemod wants
+Now we put all the parameters we’ve defined into the form `heemod` wants
 them in:
 
 Note that the cost of the new treatment (`c_trt`) is defined separately
@@ -123,7 +126,7 @@ u_D = 0 # annual utility of being Dead
 )
 ```
 
-## Creating transition matrices
+### Creating transition matrices
 
 ``` r
 states <- c("H", "U", "D")
@@ -149,15 +152,15 @@ plot(mat_T0) # visual checks
 
     Loading required namespace: diagram
 
-![](Markov_Model_Solutions_files/figure-commonmark/unnamed-chunk-4-1.png)
+![](Markov_Model_Solutions.markdown_strict_files/figure-markdown_strict/unnamed-chunk-4-1.png)
 
 ``` r
 plot(mat_T1) 
 ```
 
-![](Markov_Model_Solutions_files/figure-commonmark/unnamed-chunk-4-2.png)
+![](Markov_Model_Solutions.markdown_strict_files/figure-markdown_strict/unnamed-chunk-4-2.png)
 
-## Defining states
+### Defining states
 
 The treatment cost `c_trt` is added to *both* the Healthy and Unhealthy
 state costs under T1, since patients start treatment while Healthy and
@@ -200,7 +203,7 @@ state_D_T1 <- define_state(
 )
 ```
 
-## Defining strategies
+### Defining strategies
 
 ``` r
 ## Conventional management (T0)
@@ -228,7 +231,7 @@ simulate a single patient so results are reported *per patient*.
 time0 <- define_init(H = 1, U = 0, D = 0) # initial state vector
 ```
 
-## Run the model
+### Run the model
 
 ``` r
 # run for 20 model cycles (years)
@@ -243,9 +246,7 @@ res_mod <- run_model(
     parameters = param,
     cost = cost,
     effect = utility,
-      method = "end" # no half-cycle correction; transitions occur at the end of each cycle
-                    # matching the "no half-cycle correction" instruction 
-    
+    method = "end" # no half-cycle correction; transitions occur at the end of each cycle
   )
 ```
 
@@ -257,7 +258,7 @@ distribution between states for each of the 20 model cycles.
 plot(res_mod)
 ```
 
-![](Markov_Model_Solutions_files/figure-commonmark/unnamed-chunk-9-1.png)
+![](Markov_Model_Solutions.markdown_strict_files/figure-markdown_strict/unnamed-chunk-9-1.png)
 
 ``` r
 # The same information but as data frames for each strategy
@@ -299,29 +300,7 @@ Now, let’s sum the model payoffs to get total costs and QALYs for each
 strategy.
 
 ``` r
-## Two different ways to get total costs and QALYS for each strategy
-# 1. Using our payoffs data: 
-knitr::kable(cycle_payoffs_T0 %>% 
-    summarise(total_cost = sum(cost), total_QALY = sum(utility)) %>% 
-      mutate(strategy = "T0"))
-```
-
-| total_cost | total_QALY | strategy |
-|-----------:|-----------:|:---------|
-|   18511.28 |   15.58162 | T0       |
-
-``` r
-knitr::kable(cycle_payoffs_T1 %>% 
-    summarise(total_cost = sum(cost), total_QALY = sum(utility)) %>% 
-      mutate(strategy = "T1"))
-```
-
-| total_cost | total_QALY | strategy |
-|-----------:|-----------:|:---------|
-|   28887.88 |   16.33891 | T1       |
-
-``` r
-# 2. Looking at the default outputs of the run_model function
+# Looking at the default outputs of the run_model function
 summary(res_mod)
 ```
 
@@ -352,24 +331,63 @@ summary(res_mod)
 
 ``` r
 # Putting the incremental results in a prettier dataframe
-icer <- summary(res_mod)$res_comp 
-
-icer <- icer %>% 
-            mutate(ref = "T0") %>% 
+icer_delta <- summary(res_mod)$res_comp %>%
+            mutate(ref = "T0") %>%
             select(strategy = .strategy_names, ref, deltaCost = .dcost, deltaEffect = .deffect,
-                   icer = .icer) %>% 
+                   icer = .icer) %>%
             filter(strategy == "T1")
-    
-knitr::kable(icer)
+
+# Combining the strategy totals and the incremental result into one table, as in the Excel solution
+icer_table <- bind_rows(
+    cycle_payoffs_T1 %>%
+      summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
+      mutate(Comparator = "Treatment (T1)"),
+    cycle_payoffs_T0 %>%
+      summarise(Costs = sum(cost), QALYs = sum(utility)) %>%
+      mutate(Comparator = "Conventional Management (T0)"),
+    tibble(Comparator = "Incremental", Costs = icer_delta$deltaCost, QALYs = icer_delta$deltaEffect,
+           `Cost per QALY` = icer_delta$icer)
+  ) %>%
+  select(Comparator, Costs, QALYs, `Cost per QALY`) %>%
+  mutate(`Cost per QALY` = ifelse(is.na(`Cost per QALY`), "-", as.character(round(`Cost per QALY`))))
+
+knitr::kable(icer_table, digits = c(0, 0, 2, NA))
 ```
 
-| strategy | ref | deltaCost | deltaEffect |     icer |
-|:---------|:----|----------:|------------:|---------:|
-| T1       | T0  |   10376.6 |   0.7572887 | 13702.31 |
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Comparator</th>
+<th style="text-align: right;">Costs</th>
+<th style="text-align: right;">QALYs</th>
+<th style="text-align: left;">Cost per QALY</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Treatment (T1)</td>
+<td style="text-align: right;">28888</td>
+<td style="text-align: right;">16.34</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Conventional Management (T0)</td>
+<td style="text-align: right;">18511</td>
+<td style="text-align: right;">15.58</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Incremental</td>
+<td style="text-align: right;">10377</td>
+<td style="text-align: right;">0.76</td>
+<td style="text-align: left;">13702</td>
+</tr>
+</tbody>
+</table>
 
 **Question: What is the ICER for the new treatment (T1) versus
 conventional management (T0)?**
 
-**Question: The healthcare payer is willing to pay \$20,000 per
+**Question: The healthcare payer is willing to pay $20,000 per
 additional QALY. Based on the ICER, should they fund the new
 treatment?**

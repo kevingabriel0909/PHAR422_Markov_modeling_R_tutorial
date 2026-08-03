@@ -153,13 +153,13 @@ plot(mat_T0) # visual checks
 
     Loading required namespace: diagram
 
-![](Markov_Model_Solutions.markdown_strict_files/figure-markdown_strict/unnamed-chunk-4-1.png)
+![](Markov_Model_Solution.markdown_strict_files/figure-markdown_strict/unnamed-chunk-4-1.png)
 
 ``` r
 plot(mat_T1) 
 ```
 
-![](Markov_Model_Solutions.markdown_strict_files/figure-markdown_strict/unnamed-chunk-4-2.png)
+![](Markov_Model_Solution.markdown_strict_files/figure-markdown_strict/unnamed-chunk-4-2.png)
 
 ### Defining states
 
@@ -259,7 +259,7 @@ distribution between states for each of the 20 model cycles.
 plot(res_mod)
 ```
 
-![](Markov_Model_Solutions.markdown_strict_files/figure-markdown_strict/unnamed-chunk-9-1.png)
+![](Markov_Model_Solution.markdown_strict_files/figure-markdown_strict/unnamed-chunk-9-1.png)
 
 ``` r
 # The same information but as data frames for each strategy
@@ -351,6 +351,13 @@ icer_table <- bind_rows(
   ) %>%
   select(Comparator, Costs, QALYs, `Cost per QALY`) %>%
   mutate(`Cost per QALY` = ifelse(is.na(`Cost per QALY`), "-", as.character(round(`Cost per QALY`))))
+
+r_icer <- icer_delta$icer                     # ICER
+r_total_cost_T1 <- sum(cycle_payoffs_T1$cost) # Total cost for T1
+
+# Formatter for answer key
+dollar <- function(x, digits = 0) formatC(x, format = "f", digits = digits, big.mark = ",")
+
 
 knitr::kable(icer_table, digits = c(0, 0, 2, NA))
 ```

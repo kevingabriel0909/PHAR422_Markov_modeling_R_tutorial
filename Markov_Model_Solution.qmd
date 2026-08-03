@@ -262,18 +262,25 @@ icer_table <- bind_rows(
   select(Comparator, Costs, QALYs, `Cost per QALY`) %>%
   mutate(`Cost per QALY` = ifelse(is.na(`Cost per QALY`), "-", as.character(round(`Cost per QALY`))))
 
+r_icer <- icer_delta$icer                     # ICER
+r_total_cost_T1 <- sum(cycle_payoffs_T1$cost) # Total cost for T1
+
+# Formatter for answer key
+dollar <- function(x, digits = 0) formatC(x, format = "f", digits = digits, big.mark = ",")
+
+
 knitr::kable(icer_table, digits = c(0, 0, 2, NA))
 ```
 
 **Question: What is the ICER for the new treatment (T1) versus conventional management (T0)?**
 
-The ICER for the new treatment (T1) versus conventional management (T0) is \$13,702 per QALY gained.
+The ICER for the new treatment (T1) versus conventional management (T0) is \$`r dollar(r_icer)` per QALY gained.
 
 **Question: The healthcare payer is willing to pay \$20,000 per additional QALY. Based on the ICER, should they fund the new treatment?**
 
-Yes. At \$13,702/QALY, the new treatment costs less per additional QALY than the payer's \$20,000 willingness-to-pay threshold, so it would be considered cost-effective and worth funding under this criterion.
+Yes. At \$`r dollar(r_icer)`/QALY, the new treatment costs less per additional QALY than the payer's \$20,000 willingness-to-pay threshold, so it would be considered cost-effective and worth funding under this criterion.
 
 **Question: Are the ICER values obtained from the Excel and the R script identical? If not, why is that?\
 (Hint: what does method=end in the run_model function mean? Search the `heemod` package documentation.)**
 
-No, the Excel gives an ICER of about \$13,821/QALY, while the R script gives about \$13,702/QALY. The difference comes entirely from a modeling assumption embedded in method = "end". The R script calculates each cycle's cost and effect using the state a patient occupies at the *end* of that cycle. Since the Death state has a cost of \$0 , a patient who dies during a given cycle contributes \$0 to that cycle's cost entirely. The Excel sheet, however, was built to reflect the assumption stated in the original problem: that patients who die do so *after taking the treatment* that year, so they still "pay" for that cycle's treatment. This results in a higher cost assumption for T1, which is why Excel's Total Cost for T1 (\$28,977.57) is slightly higher than R's (\$28,887.88), and its ICER becomes higher too.
+No, the Excel gives an ICER of about \$13,821/QALY, while the R script gives about \$`r dollar(r_icer)`/QALY. The difference comes entirely from a modeling assumption embedded in method = "end". The R script calculates each cycle's cost and effect using the state a patient occupies at the *end* of that cycle. Since the Death state has a cost of \$0 , a patient who dies during a given cycle contributes \$0 to that cycle's cost entirely. The Excel sheet, however, was built to reflect the assumption stated in the original problem: that patients who die do so *after taking the treatment* that year, so they still "pay" for that cycle's treatment. This results in a higher cost assumption for T1, which is why Excel's Total Cost for T1 (\$28,977.57) is slightly higher than R's (\$`r dollar(r_total_cost_T1, 2)`), and its ICER becomes higher too.
